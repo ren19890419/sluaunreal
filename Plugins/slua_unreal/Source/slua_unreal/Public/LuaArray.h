@@ -30,6 +30,14 @@ namespace slua {
             return &array;
         }
 
+        // Cast FScriptArray to TArray<T> if ElementSize matched
+        template<typename T>
+        const TArray<T>& asTArray(lua_State* L) const {
+            if(sizeof(T)!=inner->ElementSize)
+                luaL_error(L,"Cast to TArray error, element size isn't mathed(%d,%d)",sizeof(T),inner->ElementSize);
+            return *(reinterpret_cast<const TArray<T>*>( &array ));
+        }
+        
     protected:
         static int __ctor(lua_State* L);
         static int Num(lua_State* L);
@@ -50,9 +58,7 @@ namespace slua {
         void remove(int index);
         int num() const;
         void constructItems(int index,int count);
-        void destructItems(int index,int count);
-
-        
+        void destructItems(int index,int count);      
 
         static int setupMT(lua_State* L);
         static int gc(lua_State* L);

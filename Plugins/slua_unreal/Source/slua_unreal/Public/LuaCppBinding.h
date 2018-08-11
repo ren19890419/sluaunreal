@@ -115,8 +115,13 @@ namespace slua {
         struct Functor<IntList<index...>> {
 
             template <typename AT>
-            static AT readArg(lua_State * L, int p) {
+            static typename TEnableIf<!TIsTArray<AT>::Value,AT>::Type readArg(lua_State * L, int p) {
                 return LuaObject::checkValue<AT>(L,p);
+            }
+
+            template <typename AT>
+            static typename TEnableIf<TIsTArray<AT>::Value,AT>::Type readArg(lua_State * L, int p) {
+                return LuaObject::checkTArray<AT>(L,p);
             }
 
             // index is int-list based 0, so should plus Offset to get first arg 
@@ -211,7 +216,7 @@ namespace slua {
 
     #define DefLuaClass(CLS) \
         template<> \
-        const char* TypeName<CLS>::value_() { \
+        const char* TypeName<CLS>::value() { \
             return #CLS; \
         } \
         static int Lua##CLS##_gc(lua_State* L) { \
@@ -232,7 +237,7 @@ namespace slua {
 
     #define DefLuaMethod(NAME,M) { \
         lua_CFunction x=LuaCppBinding<decltype(M),M>::LuaCFunction; \
-        bool inst=std::is_member_function_pointer<decltype(M)>::value; \
+        constexpr bool inst=std::is_member_function_pointer<decltype(M)>::value; \
         LuaObject::addMethod(L, #NAME, x, inst); \
     }
     

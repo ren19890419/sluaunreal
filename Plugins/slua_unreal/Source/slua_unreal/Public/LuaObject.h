@@ -19,6 +19,7 @@
 #include "UObject/WeakObjectPtr.h"
 #include "Blueprint/UserWidget.h"
 #include "SluaUtil.h"
+#include "LuaArray.h"
 #include "LuaObject.generated.h"
 
 
@@ -82,15 +83,16 @@ namespace slua {
         bool owned;
     };
 
-    template<typename T>
+    template<typename T, bool isUObject = std::is_base_of<UObject,T>::value>
     struct TypeName {
-        static const char* value() {
-            if(std::is_base_of<UObject,T>::value) 
-                return "UObject";
-            return value_();
-        }
+        static const char* value();
+    };
 
-        static const char* value_();
+    template<typename T>
+    struct TypeName<T, true> {
+        static const char* value() {
+            return "UObject";
+        }
     };
 
     template<typename T>
@@ -132,6 +134,13 @@ namespace slua {
 			void* ud = lua_touserdata(L, p);
 			UserData<T> *udptr = reinterpret_cast<UserData<T>*>(ud);
 			return udptr->ud;
+		}
+
+        // check value if it's TArray
+        template<class T>
+		static T checkTArray(lua_State* L, int p) {
+            CheckUD(LuaArray,L,p);
+			return UD->asTArray<typename T::ElementType>(L);
 		}
 
         template<class T>

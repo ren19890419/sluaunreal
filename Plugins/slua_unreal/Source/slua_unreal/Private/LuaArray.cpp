@@ -27,9 +27,8 @@ namespace slua {
         :inner(prop) 
     {
         // why FScriptArray can't be copy constructed or MoveToEmpty?
-        // just hack it, TODO
-        // array.MoveToEmpty(*buf);
-        FMemory::Memcpy(&array,buf,sizeof(FScriptArray));
+        // just hack it, TODO deepcopy?
+        if(buf) FMemory::Memcpy(&array,buf,sizeof(FScriptArray));
     }
 
     LuaArray::~LuaArray() {
@@ -108,8 +107,7 @@ namespace slua {
 
     template<typename T>
     int createArray(lua_State* L) {
-        auto array = FScriptArray();
-        return LuaArray::push(L,Cast<UProperty>(T::StaticClass()->GetDefaultObject()),&array);
+        return LuaArray::push(L,Cast<UProperty>(T::StaticClass()->GetDefaultObject()),nullptr);
     }
 
     int LuaArray::__ctor(lua_State* L) {
@@ -117,7 +115,7 @@ namespace slua {
         EPropertyClass type = (EPropertyClass) LuaObject::checkValue<int>(L,1);
         switch(type) {
             default:
-                check(false);
+                luaL_error(L,"unsupport type to create");
                 break;
             case EPropertyClass::Byte:
                 return createArray<UByteProperty>(L);
